@@ -7,7 +7,7 @@ exec --no-startup-id picom
 exec --no-startup-id xset b off
 
 # Scale down
-exec --no-startup-id xrandr --output eDP --scale 1.1x1.1
+exec --no-startup-id xrandr --output Virtual-1 --scale 1.1x1.1
 
 # set wallpaper
 exec_always --no-startup-id feh --randomize --bg-max ~/Media/Wallpapers/Images
@@ -37,7 +37,7 @@ bar {
    status_command i3status
    position top
    # mode hide
-   font pango:monospace 11
+   font pango:monospace 9
 }
 
 # close window

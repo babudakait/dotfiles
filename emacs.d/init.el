@@ -1,3 +1,6 @@
+;; --------------------------------------------------------------------------------
+;; PACKAGE-SYSTEN INITIALIZATION
+;; --------------------------------------------------------------------------------
 (require 'package)
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("gnu" . "https://elpa.gnu.org/packages/")))
@@ -8,13 +11,10 @@
 (require 'use-package)
 (setq use-package-always-ensure t)  ;; auto-install packages
 
-;; Doom themes
-(use-package doom-themes)
-(load-theme 'doom-material-dark t)
 
-
-
-
+;; --------------------------------------------------------------------------------
+;; BASIC SETUP
+;; --------------------------------------------------------------------------------
 ;; UI Settings
 (setq inhibit-startup-message t)
 (menu-bar-mode -1)
@@ -25,6 +25,12 @@
 ;; Line Numbers
 (global-display-line-numbers-mode t)
 (setq display-line-numbers-type 'relative)
+
+;; Disable Line Numbers for certain modes
+(dolist (mode '(org-mode-hook
+		vterm-mode-hook
+		pdf-view-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode -1))))
 
 ;; Other Useful settings
 (ido-mode 1)
@@ -48,11 +54,12 @@
 (add-hook 'emacs-startup-hook (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
 ;; Set Font
-(set-face-attribute 'default nil :font "Iosevka ExtraLight Extended" :height 120)
+(set-face-attribute 'default nil :font "Iosevka Light" :height 110)
 
 
-
-
+;; --------------------------------------------------------------------------------
+;; ORG-MODE SETUP
+;; --------------------------------------------------------------------------------
 (setq org-hide-emphasis-markers t)
 (setq org-startup-folded 'overview)
 (setq org-confirm-babel-evaluate nil)
@@ -84,19 +91,17 @@
   (org-modern-todo t)
   (org-modern-tag t))
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(org-level-1 ((t (:inherit default :weight normal :height 1.5))))
- '(org-level-2 ((t (:inherit default :height 1.4))))
- '(org-level-3 ((t (:inherit default :height 1.3))))
- '(org-level-4 ((t (:inherit default :height 1.2))))
- '(org-level-5 ((t (:inherit default :height 1.1))))
- '(org-level-6 ((t (:inherit default :height 1.1))))
- '(org-level-7 ((t (:inherit default :height 1.1))))
- '(org-level-8 ((t (:inherit default :height 1.1)))))
+(use-package visual-fill-column
+  :ensure t
+  :hook (org-mode . visual-fill-column-mode))
+
+(defun my/org-visual-setup ()
+  (setf visual-fill-column-width 100
+	visual-fill-column-center-text t)
+  (visual-fill-column-mode 1)
+  (visual-line-mode 1))
+
+(add-hook 'org-mode-hook 'my/org-visual-setup)
 
 (require 'org-tempo)
 (setq org-structure-template-alist
@@ -104,11 +109,10 @@
         ("cpp"    . "src cpp")
         ("py"     . "src python")
         ("sh"     . "src shell")
-	("script" . "src shell-script")
+	("awk"    . "src awk")
         ("js"     . "src js")
         ("el"     . "src emacs-lisp")
-	("lisp"   . "src lisp")
-	("mk"     . "src makefile")))
+	("lisp"   . "src lisp")))
 
 (with-eval-after-load 'org
   (add-to-list 'org-file-apps '("\\.png\\'" . "feh %s"))
@@ -120,234 +124,27 @@
   (add-to-list 'org-file-apps '("\\.mp4\\'" . "mpv %s")))
 
 
-(setq org-startup-with-inline-images t)
-(setq org-image-actual-width 1000)
+;; --------------------------------------------------------------------------------
+;; PDF-TOOLS PACKAGE
+;; --------------------------------------------------------------------------------
+(use-package pdf-tools
+  :config
+  (pdf-tools-install))
 
 
+;; --------------------------------------------------------------------------------
+;; THEME SETUP
+;; --------------------------------------------------------------------------------
+(use-package cyberpunk-theme
+  :config
+  (load-theme 'cyberpunk t))
 
 
-
-
-
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-;; CONFIG
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-
-(defvar my/config
-  '(:term-name "*my-terminal*"
-	       :term-below t
-	       :c-cmd "gcc %f -o /tmp/a.out -lm && /tmp/a.out"
-	       :python-cmd "python3 %f"
-	       :lisp-cmd "sbcl --script %f"
-	       :c-fmt "clang-format -i %f"
-	       :python-fmt "black %f"))
-
-
-(defun my/helper--get-lang-extension (lang)
-  (cond
-   ((string= lang "c")      ".c")
-   ((string= lang "python") ".py")
-   (t                       ".txt")))
-
-
-(defun my/helper--build-lang-command (file lang libs)
-  (let ((cmd (plist-get my/config
-			(intern (format ":%s-cmd" lang)))))
-    (when cmd
-      (let ((cmd1 (replace-regexp-in-string "%f" file cmd t t)))
-	(if libs
-	    (replace-regexp-in-string "&&" (concat libs " &&") cmd1 t t)
-	  cmd1)))))
-
-
-(defun my/helper--create-file (path lang content)
-  (let* ((ext (my/helper--get-lang-extension lang))
-	 (file (if path path (make-temp-file "my-" nil ext))))
-    (when (and path (file-name-directory path))
-      (make-directory (file-name-directory path) t))
-    (with-temp-file file (insert content))
-    file))
-
-
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-;; FORMATTING
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-
-(defun my/format-buffer ()
-  (interactive)
-  (let ((spec (cond
-	       ;; Org; no external formatter
-	       ((derived-mode-p 'org-mode) 'org)
-
-	       ;; C / C++
-	       ((derived-mode-p 'c-mode 'c++-mode)
-		(cons "clang-format" nil))
-		    
-	       ; Python
-	       ((derived-mode-p 'python-mode)
-		(cons "black" '("-" "--quiet")))
-
-	       ;; JS / TS / HTML / CSS
-	       ((derived-mode-p 'js-mode 'js-ts-mode 'typescript-mode 'html-mode 'css-mode)
-		(let ((ext (cond
-			    ((derived-mode-p 'typescript-mode) "ts")
-			    ((derived-mode-p 'html-mode) "html")
-			    ((derived-mode-p 'css-mode) "css")
-			    (t "js"))))
-		  (cons "prettier"
-			(list "--stdin-filepath" (concat "dummy." ext)))))
-	       
-	       (t nil))))
-
-    (cond
-     ;; Org special case
-     ((eq spec 'org)
-      (org-indent-indent-buffer))
-
-     ;; External formatters
-     (spec
-      (let ((program    (car spec))
-	    (args       (cdr spec))
-	    (orig-point (point)))
-	(apply #'call-process-region
-	       (point-min) (point-max)
-	       program
-	       t t nil
-	       args)
-	(goto-char orig-point)))
-
-     (t
-      (message "No formatter for this mode")))))
-   
-
-
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-;; TERMINAL TOGGLE SYSTEM
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-
-(defun my/helper--create-terminal ()
-  (let ((term-name (plist-get my/config :term-name)))
-    (unless (buffer-live-p (get-buffer term-name))
-      (save-window-excursion
-	(let ((buf (ansi-term (getenv "SHELL"))))
-	  (with-current-buffer buf
-	    (rename-buffer term-name)))))))
-
-
-(defun my/helper--terminal-visible-p ()
-  (let ((win (get-buffer-window (plist-get my/config :term-name) t)))
-    (and win (window-live-p win))))
-
-
-(defun my/helper--show-terminal (&optional switch)
-  (my/helper--create-terminal)
-
-  (unless (my/helper--terminal-visible-p)
-    (let ((win
-	   (if (plist-get my/config :term-below)
-	       (split-window nil -15 'below)
-	     (split-window nil -100 'right))))
-      (set-window-buffer win (get-buffer (plist-get my/config :term-name)))
-      (when switch (select-window win)))))
-
-
-(defun my/helper--hide-terminal ()
-  (if (my/helper--terminal-visible-p)
-      (delete-window
-       (get-buffer-window (plist-get my/config :term-name)))))
-
-
-(defun my/send-raw-string-terminal (cmd)
-  (interactive)
-  (my/helper--show-terminal)
-  (with-current-buffer (get-buffer (plist-get my/config :term-name))
-    (goto-char (point-max))
-    (term-send-raw-string (concat cmd "\n"))))
-
-
-(defun my/toggle-terminal ()
-  (interactive)
-  (if (my/helper--terminal-visible-p)
-      (my/helper--hide-terminal)
-    (my/helper--show-terminal t)))
-
-
-(defun my/move-terminal ()
-  (interactive)
-  (setf my/config (plist-put my/config :term-below
-			     (not (plist-get my/config :term-below))))
-  (when (my/helper--terminal-visible-p)
-    (my/helper--hide-terminal))
-  (my/helper--show-terminal t))
-      
-
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-;; RUN ORG SRC BLOCK IN TERMINAL
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-
-(defun my/helper--org-src-block-p ()
-  (when (derived-mode-p 'org-mode)
-    (let ((el (org-element-context)))
-      (when (eq (org-element-type el) 'src-block)
-	el))))
-
-
-(defun my/helper--extract-org-src-block ()
-  (when-let ((el (my/helper--org-src-block-p)))
-    (let ((header (org-babel-parse-header-arguments
-		   (org-element-property :parameters el))))
-      (list
-       :lang   (org-element-property :language el)
-       :body   (org-element-property :value el)
-       :path   (alist-get :path header)
-       :run    (alist-get :run header)
-       :single (alist-get :single header)
-       :libs   (alist-get :libs header)))))
-
-
-(defun my/run-org-src-block ()
-  (interactive)
-  (when-let* ((data (my/helper--extract-org-src-block))
-	      (run  (plist-get data :run)))
-    
-    (let ((lang    (plist-get data :lang))
-	  (path    (plist-get data :path))
-	  (single  (plist-get data :single))
-	  (libs    (plist-get data :libs))
-	  (content (plist-get data :body))
-	  (done    nil))
-
-      (save-excursion
-	(while (and (not done) (not single))
-	  (condition-case nil
-	      (progn
-		(org-babel-previous-src-block)
-		(let ((data (my/helper--extract-org-src-block)))
-		  (when (and (eq nil (plist-get data :run))
-			     (string= lang (plist-get data :lang)))
-		    (setf content (concat (plist-get data :body) "\n" content)))))
-	    (error
-	     (setf done t)))))
-
-      (let* ((file (my/helper--create-file path lang content))
-	     (cmd  (my/helper--build-lang-command file lang libs)))
-
-	(unless cmd
-	  (error "No command for language %s" lang))
-
-	(my/send-raw-string-terminal cmd)))))
-
-
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-;; KEYBINDINGS
-;; ────────────────────────────────────────────────────────────────────────────────────────────────────
-
-(global-set-key (kbd "C-c f") #'my/format-buffer)
-
-(global-set-key (kbd "C-`") #'my/toggle-terminal)
-(global-set-key (kbd "C-M-`") #'my/move-terminal)
-
-(with-eval-after-load 'org
-  (define-key org-mode-map (kbd "C-<return>")
-	      #'my/run-org-src-block))
-
+;; --------------------------------------------------------------------------------
+;; VTERM SETUP
+;; --------------------------------------------------------------------------------
+(use-package vterm
+  :ensure t
+  :commands vterm
+  :config
+  (setf vterm-shell "/bin/bash"))

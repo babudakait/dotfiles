@@ -2,7 +2,7 @@
 
 set -e
 
-DOTFILES_DIR="$HOME/Workspace/dotfiles"
+DOTFILES_DIR="$HOME/dotfiles"
 
 backup_file() {
     local target="$1"

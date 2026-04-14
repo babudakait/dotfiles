@@ -13,7 +13,7 @@ alias yt-aud='yt-dlp -x --audio-format mp3'
 alias gl='gallery-dl --cookies-from-browser brave'
 alias wget_website='wget --mirror --convert-links --adjust-extension --page-requisites --no-parent'
 alias serve='python3 -m http.server'
-alias record='ffmpeg -video_size 2112x1188 -framerate 30 -f x11grab -i :0.0 output.mp4'
+alias record='ffmpeg -video_size 1408x880 -framerate 30 -f x11grab -i :0.0 output.mp4'
 alias cliplog='~/.config/scripts/cliplog.sh'
 
 PS1='[\u@\h \W]\$ '
