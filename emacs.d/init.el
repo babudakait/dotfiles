@@ -33,6 +33,7 @@
   (add-hook mode (lambda () (display-line-numbers-mode -1))))
 
 ;; Other Useful settings
+(require 'ido)
 (ido-mode 1)
 (ido-everywhere 1)
 (show-paren-mode 1)
@@ -124,6 +125,12 @@
 
 
 ;; --------------------------------------------------------------------------------
+;; CONFIG & HELPER FUNCTIONS
+;; --------------------------------------------------------------------------------
+(defvar my/config
+  '(:vterm-below t))
+
+;; --------------------------------------------------------------------------------
 ;; PDF-TOOLS PACKAGE
 ;; --------------------------------------------------------------------------------
 (use-package pdf-tools
@@ -147,3 +154,64 @@
   :commands vterm
   :config
   (setf vterm-shell "/bin/bash"))
+
+
+
+
+(defun my/vterm-visible-p ()
+  "checks if terminal buffer is displayed in a window. window or nil"
+  (get-buffer-window "*vterm*" t))
+
+(defun my/vterm-focused-p ()
+  "checks if point (cursor) is on terminal. t or nil"
+  (eq (selected-window) (my/vterm-visible-p)))
+
+(defun my/show-vterm (&optional switch)
+  "show terminal in split window 'below or 'right
+if terminal buffer not created then first create it"
+  (save-window-excursion
+    (vterm))
+
+  (let ((win (my/vterm-visible-p)))
+    (unless win
+      (setf win
+	    (if (plist-get my/config :vterm-below)
+		(split-window nil -15 'below)
+	      (split-window nil -80 'right)))
+      (set-window-buffer win (get-buffer "*vterm*")))
+    (when switch (select-window win))))
+
+(defun my/hide-vterm ()
+  "hides terminal only when terminal is focused"
+  (when (my/vterm-focused-p)
+    (delete-window (get-buffer-window "*vterm*" t))))
+
+
+(defun my/toggle-vterm ()
+  "toggles terminal"
+  (interactive)
+  (if (my/vterm-focused-p)
+      (my/hide-vterm)
+    (my/show-vterm t)))
+
+(defun my/move-vterm ()
+  "moves terminal between below <-> right"
+  (interactive)
+  (setf my/config
+	(plist-put my/config :vterm-below
+		   (not (plist-get my/config :vterm-below))))
+
+  (when (my/vterm-visible-p)
+    (my/hide-vterm))
+  (my/show-vterm t))
+
+(defun my/send-command-vterm (command)
+  "send command to vterm"
+  (my/show-vterm)
+  (with-current-buffer "*vterm*"
+    (goto-char (point-max))
+    (term-send-raw-string (concat command "\n"))))
+
+;; Keybindings
+(global-set-key (kbd "C-`")   #'my/toggle-vterm)
+(global-set-key (kbd "C-M-`") #'my/move-vterm)
