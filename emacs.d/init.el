@@ -92,8 +92,7 @@
   (org-modern-tag t))
 
 (use-package visual-fill-column
-  :ensure t
-  :hook (org-mode . visual-fill-column-mode))
+  :ensure t)
 
 (defun my/org-visual-setup ()
   (setf visual-fill-column-width 100
