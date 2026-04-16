@@ -125,10 +125,8 @@
 
 
 ;; --------------------------------------------------------------------------------
-;; CONFIG & HELPER FUNCTIONS
+;; HELPER FUNCTIONS
 ;; --------------------------------------------------------------------------------
-(defvar my/config
-  '(:vterm-below t))
 
 ;; --------------------------------------------------------------------------------
 ;; PDF-TOOLS PACKAGE
@@ -155,8 +153,7 @@
   :config
   (setf vterm-shell "/bin/bash"))
 
-
-
+(defvar *vterm-below* t)
 
 (defun my/vterm-visible-p ()
   "checks if terminal buffer is displayed in a window. window or nil"
@@ -175,7 +172,7 @@ if terminal buffer not created then first create it"
   (let ((win (my/vterm-visible-p)))
     (unless win
       (setf win
-	    (if (plist-get my/config :vterm-below)
+	    (if *vterm-below*
 		(split-window nil -15 'below)
 	      (split-window nil -80 'right)))
       (set-window-buffer win (get-buffer "*vterm*")))
@@ -185,7 +182,6 @@ if terminal buffer not created then first create it"
   "hides terminal only when terminal is focused"
   (when (my/vterm-focused-p)
     (delete-window (get-buffer-window "*vterm*" t))))
-
 
 (defun my/toggle-vterm ()
   "toggles terminal"
@@ -197,9 +193,7 @@ if terminal buffer not created then first create it"
 (defun my/move-vterm ()
   "moves terminal between below <-> right"
   (interactive)
-  (setf my/config
-	(plist-put my/config :vterm-below
-		   (not (plist-get my/config :vterm-below))))
+  (setq *vterm-below* (not *vterm-below*))
 
   (when (my/vterm-visible-p)
     (my/hide-vterm))
