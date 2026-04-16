@@ -139,10 +139,50 @@
 ;; --------------------------------------------------------------------------------
 ;; THEME SETUP
 ;; --------------------------------------------------------------------------------
-(use-package cyberpunk-theme
-  :config
-  (load-theme 'cyberpunk t))
+(use-package cyberpunk-theme)
+(use-package doom-themes)
 
+(defvar *my-themes*
+  '(cyberpunk
+    doom-material-dark
+    doom-1337
+    doom-acario-dark
+    doom-ir-black))
+
+(defvar *my-theme-index* 0)
+(defvar *my-theme-state-file* "~/.emacs.d/theme-state.el")
+
+
+(defun my/load-theme (index)
+  "disable current themes and load theme at position index"
+  (let* ((len   (length *my-themes*))
+	 (idx   (mod index len))
+	 (theme (nth idx *my-themes*)))
+    (mapc #'disable-theme custom-enabled-themes)
+    (load-theme theme t)
+    (setq *my-theme-index* idx)
+    (message "Theme loaded: %S" theme)))
+
+(defun my/cycle-themes ()
+  "cycle through themes defined in *my-theme*"
+  (interactive)
+  (my/load-theme (1+ *my-theme-index*)))
+
+;; Keybinding
+(global-set-key (kbd "<f5>") #'my/cycle-themes)
+
+;; save theme on exit
+(add-hook 'kill-emacs-hook
+	  (lambda ()
+	    (with-temp-file *my-theme-state-file*
+	      (insert (format "(setq *my-theme-index* %d)" *my-theme-index*)))))
+
+;; load theme at startup
+(when (file-exists-p *my-theme-state-file*)
+  (message "loading...")
+  (load-file *my-theme-state-file*))
+
+(my/load-theme *my-theme-index*)
 
 ;; --------------------------------------------------------------------------------
 ;; VTERM SETUP
@@ -153,7 +193,7 @@
   :config
   (setf vterm-shell "/bin/bash"))
 
-(defvar *vterm-below* t)
+(defvar *my-vterm-below* t)
 
 (defun my/vterm-visible-p ()
   "checks if terminal buffer is displayed in a window. window or nil"
@@ -172,7 +212,7 @@ if terminal buffer not created then first create it"
   (let ((win (my/vterm-visible-p)))
     (unless win
       (setf win
-	    (if *vterm-below*
+	    (if *my-vterm-below*
 		(split-window nil -15 'below)
 	      (split-window nil -80 'right)))
       (set-window-buffer win (get-buffer "*vterm*")))
@@ -193,7 +233,7 @@ if terminal buffer not created then first create it"
 (defun my/move-vterm ()
   "moves terminal between below <-> right"
   (interactive)
-  (setq *vterm-below* (not *vterm-below*))
+  (setq *my-vterm-below* (not *my-vterm-below*))
 
   (when (my/vterm-visible-p)
     (my/hide-vterm))
@@ -209,3 +249,13 @@ if terminal buffer not created then first create it"
 ;; Keybindings
 (global-set-key (kbd "C-`")   #'my/toggle-vterm)
 (global-set-key (kbd "C-M-`") #'my/move-vterm)
+
+
+;; --------------------------------------------------------------------------------
+;; SLY SETUP - EVAL LAST EXPRESSION LISP
+;; --------------------------------------------------------------------------------
+(use-package sly
+  :init
+  (setq inferior-lisp-program "sbcl")
+  :config
+  (sly-setup '(sly-fancy)))
