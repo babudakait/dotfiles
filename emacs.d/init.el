@@ -92,11 +92,15 @@
   (org-modern-todo t)
   (org-modern-tag t))
 
+(dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
+                org-level-5 org-level-6 org-level-7 org-level-8))
+  (set-face-attribute face nil :weight 'bold :height 1.3))
+
 (use-package visual-fill-column
   :ensure t)
 
 (defun my/org-visual-setup ()
-  (setf visual-fill-column-width 100
+  (setf visual-fill-column-width 110
 	visual-fill-column-center-text t)
   (visual-fill-column-mode 1)
   (visual-line-mode 1))
@@ -259,3 +263,42 @@ if terminal buffer not created then first create it"
   (setq inferior-lisp-program "sbcl")
   :config
   (sly-setup '(sly-fancy)))
+
+(defun my/indicate (beg end)
+  (pulse-momentary-highlight-region beg end))
+
+(defun my/lang-context-p (mode language)
+  (or
+   (derived-mode-p mode)
+   (and (derived-mode-p 'org-mode)
+	(org-in-src-block-p)
+	(string=
+	 (org-element-property :language (org-element-context))
+	 language))))
+
+(defun my/get-last-expression-lisp ()
+  (with-syntax-table emacs-lisp-mode-syntax-table
+    (thing-at-point 'sexp t)))
+
+(defun my/eval-last-expression-lisp ()
+  (let ((expr (my/get-last-expression-lisp)))
+    (if (string-prefix-p "(defun " expr)
+	(sly-eval-last-expression)
+      (if-let ((buf (get-buffer "*sly-mrepl for sbcl*")))
+	  (with-current-buffer buf
+	    (goto-char (point-max))
+	    (insert expr)
+	    (sly-mrepl-return))
+	(message "SLY REPL not running")))))
+
+(defun my/eval-last-expression ()
+  (interactive)
+  (cond
+   ((my/lang-context-p 'lisp-mode "lisp")
+    (my/eval-last-expression-lisp))
+
+   (t
+    (message "context not supported"))))
+
+
+(global-set-key (kbd "C-M-e") #'my/eval-last-expression)
