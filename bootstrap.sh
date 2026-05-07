@@ -2,16 +2,7 @@
 
 set -e
 
-DOTFILES_DIR="$HOME/dotfiles"
-
-backup_file() {
-    local target="$1"
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
-        local backup="${target}.backup.$(date +%Y%m%d%H%M%S)"
-        echo "Backing up $target -> $backup"
-        mv "$target" "$backup"
-    fi
-}
+DOTFILES_DIR="$HOME/Workspace/dotfiles"
 
 link_dir() {
     local src="$1"
@@ -83,6 +74,24 @@ if [ -d "$DOTFILES_DIR/scripts" ]; then
 
     chmod +x "$DOTFILES_DIR"/scripts/*.sh 2>/dev/null || true
     chmod +x "$HOME"/.config/scripts/*.sh 2>/dev/null || true
+fi
+
+### sway
+# dotfiles/sway -> ~/.config/sway
+if [ -d "$DOTFILES_DIR/sway" ]; then
+    link_dir "$DOTFILES_DIR/sway" "$HOME/.config/sway"
+fi
+
+### waybar
+# dotfiles/waybar -> ~/.config/waybar
+if [ -d "$DOTFILES_DIR/waybar" ]; then
+    link_dir "$DOTFILES_DIR/waybar" "$HOME/.config/waybar"
+fi
+
+### foot
+# dotfiles/foot -> ~/.config/foot
+if [ -d "$DOTFILES_DIR/foot" ]; then
+    link_dir "$DOTFILES_DIR/foot" "$HOME/.config/foot"
 fi
 
 echo "All done!"
