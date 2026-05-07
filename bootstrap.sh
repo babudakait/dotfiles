@@ -4,6 +4,15 @@ set -e
 
 DOTFILES_DIR="$HOME/Workspace/dotfiles"
 
+backup_file() {
+    local target="$1"
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+        local backup="${target}.backup.$(date +%Y%m%d%H%M%S)"
+        echo "Backing up $target -> $backup"
+        mv "$target" "$backup"
+    fi
+}
+
 link_dir() {
     local src="$1"
     local dest="$2"
