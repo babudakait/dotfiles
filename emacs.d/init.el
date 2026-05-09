@@ -40,12 +40,6 @@
 (save-place-mode 1)          ;; Remember cursor positions in files
 (global-auto-revert-mode 1)  ;; if file changes on disk reload its buffer
 
-;; Never let point get closer than 10 lines to top/bottom of window
-(setq scroll-margin 10)
-(setq scroll-conservatively 101)   ;; smooth scrolling, no recentering
-(setq scroll-step 1)               ;; scroll by 1 line when needed
-
-;; Handle temporary files
 (setq auto-save-default nil)   ;; Disable auto-saving
 (setq make-backup-files nil)   ;; Disable backup~ files
 (setq create-lockfiles nil)    ;; Disable .#lock files
@@ -55,23 +49,16 @@
 (add-hook 'emacs-startup-hook (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
 ;; Set Font
-(set-face-attribute 'default nil :font "Iosevka Light" :height 110)
+(set-face-attribute 'default nil :font "Iosevka Light" :height 140)
 
 
 ;; --------------------------------------------------------------------------------
 ;; ORG-MODE SETUP
 ;; --------------------------------------------------------------------------------
-(setq org-hide-emphasis-markers t)
-(setq org-startup-folded 'overview)
-(setq org-confirm-babel-evaluate nil)
+(require 'org)
+(require 'org-tempo)
 
-(setq org-src-window-setup 'current-window)
-(setq org-src-preserve-indentation t)
-(setq org-edit-src-content-indentation 0)
-(setq org-ellipsis " ▼ ")
-
-(setq org-indent-indentation-per-level 3)
-(add-hook 'org-mode-hook 'org-indent-mode)
+(use-package visual-fill-column)
 
 (use-package org-modern
   :hook (org-mode . org-modern-mode)
@@ -92,12 +79,16 @@
   (org-modern-todo t)
   (org-modern-tag t))
 
-(dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
-                org-level-5 org-level-6 org-level-7 org-level-8))
-  (set-face-attribute face nil :weight 'bold :height 1.3))
+(setq org-hide-emphasis-markers t)
+(setq org-startup-folded 'overview)
+(setq org-confirm-babel-evaluate nil)
 
-(use-package visual-fill-column
-  :ensure t)
+(setq org-src-window-setup 'current-window)
+(setq org-src-preserve-indentation t)
+(setq org-edit-src-content-indentation 0)
+(setq org-ellipsis " ▼ ")
+
+(setq org-indent-indentation-per-level 3)
 
 (defun my/org-visual-setup ()
   (setf visual-fill-column-width 110
@@ -106,8 +97,8 @@
   (visual-line-mode 1))
 
 (add-hook 'org-mode-hook 'my/org-visual-setup)
+(add-hook 'org-mode-hook 'org-indent-mode)
 
-(require 'org-tempo)
 (setq org-structure-template-alist
       '(("c"      . "src c")
         ("cpp"    . "src cpp")
@@ -119,6 +110,10 @@
 	("lisp"   . "src lisp")))
 
 (with-eval-after-load 'org
+  (dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
+			      org-level-5 org-level-6 org-level-7 org-level-8))
+    (set-face-attribute face nil :weight 'bold :height 1.3))
+
   (add-to-list 'org-file-apps '("\\.png\\'" . "feh %s"))
   (add-to-list 'org-file-apps '("\\.jpg\\'" . "feh %s"))
   (add-to-list 'org-file-apps '("\\.jpeg\\'" . "feh %s"))
@@ -126,18 +121,6 @@
   (add-to-list 'org-file-apps '("\\.webp\\'" . "feh %s"))
   (add-to-list 'org-file-apps '("\\.svg\\'" . "feh %s"))
   (add-to-list 'org-file-apps '("\\.mp4\\'" . "mpv %s")))
-
-
-;; --------------------------------------------------------------------------------
-;; HELPER FUNCTIONS
-;; --------------------------------------------------------------------------------
-
-;; --------------------------------------------------------------------------------
-;; PDF-TOOLS PACKAGE
-;; --------------------------------------------------------------------------------
-(use-package pdf-tools
-  :config
-  (pdf-tools-install))
 
 
 ;; --------------------------------------------------------------------------------
@@ -187,118 +170,16 @@
   (load-file *my-theme-state-file*))
 
 (my/load-theme *my-theme-index*)
-
-;; --------------------------------------------------------------------------------
-;; VTERM SETUP
-;; --------------------------------------------------------------------------------
-(use-package vterm
-  :ensure t
-  :commands vterm
-  :config
-  (setf vterm-shell "/bin/bash"))
-
-(defvar *my-vterm-below* t)
-
-(defun my/vterm-visible-p ()
-  "checks if terminal buffer is displayed in a window. window or nil"
-  (get-buffer-window "*vterm*" t))
-
-(defun my/vterm-focused-p ()
-  "checks if point (cursor) is on terminal. t or nil"
-  (eq (selected-window) (my/vterm-visible-p)))
-
-(defun my/show-vterm (&optional switch)
-  "show terminal in split window 'below or 'right
-if terminal buffer not created then first create it"
-  (save-window-excursion
-    (vterm))
-
-  (let ((win (my/vterm-visible-p)))
-    (unless win
-      (setf win
-	    (if *my-vterm-below*
-		(split-window nil -15 'below)
-	      (split-window nil -80 'right)))
-      (set-window-buffer win (get-buffer "*vterm*")))
-    (when switch (select-window win))))
-
-(defun my/hide-vterm ()
-  "hides terminal only when terminal is focused"
-  (when (my/vterm-focused-p)
-    (delete-window (get-buffer-window "*vterm*" t))))
-
-(defun my/toggle-vterm ()
-  "toggles terminal"
-  (interactive)
-  (if (my/vterm-focused-p)
-      (my/hide-vterm)
-    (my/show-vterm t)))
-
-(defun my/move-vterm ()
-  "moves terminal between below <-> right"
-  (interactive)
-  (setq *my-vterm-below* (not *my-vterm-below*))
-
-  (when (my/vterm-visible-p)
-    (my/hide-vterm))
-  (my/show-vterm t))
-
-(defun my/send-command-vterm (command)
-  "send command to vterm"
-  (my/show-vterm)
-  (with-current-buffer "*vterm*"
-    (goto-char (point-max))
-    (term-send-raw-string (concat command "\n"))))
-
-;; Keybindings
-(global-set-key (kbd "C-`")   #'my/toggle-vterm)
-(global-set-key (kbd "C-M-`") #'my/move-vterm)
-
-
-;; --------------------------------------------------------------------------------
-;; SLY SETUP - EVAL LAST EXPRESSION LISP
-;; --------------------------------------------------------------------------------
-(use-package sly
-  :init
-  (setq inferior-lisp-program "sbcl")
-  :config
-  (sly-setup '(sly-fancy)))
-
-(defun my/indicate (beg end)
-  (pulse-momentary-highlight-region beg end))
-
-(defun my/lang-context-p (mode language)
-  (or
-   (derived-mode-p mode)
-   (and (derived-mode-p 'org-mode)
-	(org-in-src-block-p)
-	(string=
-	 (org-element-property :language (org-element-context))
-	 language))))
-
-(defun my/get-last-expression-lisp ()
-  (with-syntax-table emacs-lisp-mode-syntax-table
-    (thing-at-point 'sexp t)))
-
-(defun my/eval-last-expression-lisp ()
-  (let ((expr (my/get-last-expression-lisp)))
-    (if (string-prefix-p "(defun " expr)
-	(sly-eval-last-expression)
-      (if-let ((buf (get-buffer "*sly-mrepl for sbcl*")))
-	  (with-current-buffer buf
-	    (goto-char (point-max))
-	    (insert expr)
-	    (sly-mrepl-return))
-	(message "SLY REPL not running")))))
-
-(defun my/eval-last-expression ()
-  (interactive)
-  (cond
-   ((my/lang-context-p 'lisp-mode "lisp")
-    (my/eval-last-expression-lisp))
-
-   (t
-    (message "context not supported"))))
-
-
-(global-set-key (kbd "C-M-e") #'my/eval-last-expression)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(cyberpunk-theme doom-themes org-modern visual-fill-column)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
