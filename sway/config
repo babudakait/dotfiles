@@ -17,6 +17,7 @@ bindsym $mod+space floating toggle
 bindsym $mod+Shift+r reload
 
 bindsym $mod+Return exec foot
+bindsym $mod+e exec thunar
 bindsym $mod+b exec brave
 bindsym $mod+d exec wofi --show drun
 
