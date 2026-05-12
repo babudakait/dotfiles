@@ -112,7 +112,7 @@
 (with-eval-after-load 'org
   (dolist (face '(org-level-1 org-level-2 org-level-3 org-level-4
 			      org-level-5 org-level-6 org-level-7 org-level-8))
-    (set-face-attribute face nil :weight 'bold :height 1.3))
+    (set-face-attribute face nil :weight 'bold :height 1.1))
 
   (add-to-list 'org-file-apps '("\\.png\\'" . "feh %s"))
   (add-to-list 'org-file-apps '("\\.jpg\\'" . "feh %s"))
@@ -130,7 +130,8 @@
 (use-package doom-themes)
 
 (defvar *my-themes*
-  '(cyberpunk
+  '(default
+    cyberpunk
     doom-material-dark
     doom-1337
     doom-acario-dark
@@ -146,7 +147,8 @@
 	 (idx   (mod index len))
 	 (theme (nth idx *my-themes*)))
     (mapc #'disable-theme custom-enabled-themes)
-    (load-theme theme t)
+    (unless (eq theme 'default)
+      (load-theme theme t))
     (setq *my-theme-index* idx)
     (message "Theme loaded: %S" theme)))
 
