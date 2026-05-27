@@ -42,14 +42,14 @@
 
 (setq auto-save-default nil)   ;; Disable auto-saving
 (setq make-backup-files nil)   ;; Disable backup~ files
-(setq create-lockfiles nil)    ;; Disable .#lock files
+(setq create-lockfiles nil)     ;; Disable .#lock files
 
 ;; Something Performace Wise via ChatGPT
 (setq gc-cons-threshold (* 50 1000 1000))
 (add-hook 'emacs-startup-hook (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
 ;; Set Font
-(set-face-attribute 'default nil :font "Iosevka Light" :height 140)
+(set-face-attribute 'default nil :font "Iosevka" :height 170)
 
 
 ;; --------------------------------------------------------------------------------
@@ -173,3 +173,15 @@
 
 (my/load-theme *my-theme-index*)
 
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages nil))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

@@ -7,7 +7,7 @@ exec --no-startup-id picom
 exec --no-startup-id xset b off
 
 # Scale down
-exec --no-startup-id xrandr --output Virtual-1 --scale 1.1x1.1
+# exec --no-startup-id xrandr --output Virtual-1 --scale 1.1x1.1
 
 # set wallpaper
 exec_always --no-startup-id feh --randomize --bg-max ~/Media/Wallpapers/Images
@@ -16,10 +16,10 @@ bindsym $mod+w exec --no-startup-id ~/.config/scripts/image_wallpaper.sh
 # video wallpaper
 bindsym $mod+Shift+w exec --no-startup-id ~/.config/scripts/video_wallpaper.sh
 
-for_window [class=".*"] border pixel 2
-gaps inner 5
+# for_window [class=".*"] border pixel 2
+# gaps inner 5
 focus_follows_mouse no
-client.focused #4c7899 #285577 #ffffff #2e9ef4
+# client.focused #4c7899 #285577 #ffffff #2e9ef4
 
 # switch between tiled and floating windows
 bindsym $mod+Tab focus mode_toggle
@@ -28,14 +28,14 @@ bindsym $mod+Tab focus mode_toggle
 for_window [class="mpv"] \
   floating enable, \
   sticky enable, \
-  border pixel 0, \
+  border pixel 5, \
   move position center, \
   resize set 1000 700
 
 # set i3status
 bar {
    status_command i3status
-   position top
+   position bottom
    # mode hide
    font pango:monospace 9
 }
@@ -62,7 +62,7 @@ bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 
 bindsym $mod+Return exec alacritty
 bindsym $mod+d exec dmenu_run
-bindsym $mod+b exec brave
+bindsym $mod+b exec brave-browser
 bindsym $mod+e exec thunar
 
 # split layout hozizontal
