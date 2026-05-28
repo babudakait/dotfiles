@@ -49,7 +49,7 @@
 (add-hook 'emacs-startup-hook (lambda () (setq gc-cons-threshold (* 2 1000 1000))))
 
 ;; Set Font
-(set-face-attribute 'default nil :font "Iosevka" :height 170)
+(set-face-attribute 'default nil :font "Iosevka Light" :height 120)
 
 
 ;; --------------------------------------------------------------------------------
