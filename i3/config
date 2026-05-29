@@ -36,7 +36,7 @@ for_window [class="mpv"] \
 bar {
    status_command i3status
    position bottom
-   # mode hide
+   mode hide
    font pango:monospace 9
 }
 
